@@ -1,7 +1,7 @@
 name: Build PlotSquared (Gradle)
 on:
-  workflow_dispatch: # Execução manual
-  push:             # Executa ao fazer push
+  workflow_dispatch:
+  push:
     branches: [ "main" ]
 
 jobs:
@@ -15,9 +15,9 @@ jobs:
 
       - name: Debug Structure
         run: |
-          echo "=== ESTRUTURA DO REPOSITÓRIO ==="
-          ls -la
-          echo "=== ARQUIVOS GRADLE ==="
+          echo "=== ESTRUTURA COMPLETA ==="
+          ls -laR
+          echo "=== BUILD.GRADLE ==="
           find . -name build.gradle -exec ls -la {} \;
 
       - name: Set up JDK 17
@@ -30,11 +30,15 @@ jobs:
       - name: Build with Gradle
         run: |
           chmod +x gradlew
-          ./gradlew :PlotSquared-Bukkit:build -x test --no-daemon
+          ./gradlew clean build -x test --no-daemon
+          echo "=== ARQUIVOS GERADOS ==="
+          find . -name *.jar -exec ls -la {} \;
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: PlotSquared-JAR
-          path: PlotSquared-Bukkit/build/libs/*.jar
+          path: |
+            **/PlotSquared-Bukkit/build/libs/*.jar
+            **/build/libs/*.jar
           if-no-files-found: error
