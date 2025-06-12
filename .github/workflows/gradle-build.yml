@@ -1,4 +1,4 @@
-name: Build PlotSquared (1.21)
+name: Build PlotSquared (Fixed Path)
 on:
   workflow_dispatch:
   push:
@@ -15,12 +15,10 @@ jobs:
 
       - name: Debug Structure
         run: |
-          echo "=== ESTRUTURA DO PROJETO ==="
-          ls -la
-          echo "=== BUILD.GRADLE ==="
+          echo "=== ESTRUTURA COMPLETA ==="
+          ls -laR
+          echo "=== ARQUIVOS GRADLE ==="
           find . -name build.gradle -exec ls -la {} \;
-          echo "=== SUBMÓDULOS ==="
-          git submodule status
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -29,14 +27,18 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      - name: Build with Gradle (Debug Mode)
+      - name: Build with Gradle
         run: |
           chmod +x gradlew
-          ./gradlew clean build -x test --no-daemon --stacktrace --scan
+          ./gradlew clean build -x test --no-daemon --stacktrace
+          echo "=== ARQUIVOS GERADOS ==="
+          find . -name "*.jar" -exec ls -la {} \;
 
       - name: Upload Artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: PlotSquared-JAR
-          path: PlotSquared-Bukkit/build/libs/*.jar
+          path: |
+            **/PlotSquared-Bukkit/build/libs/*.jar
+            **/build/libs/*.jar
+          if-no-files-found: error
