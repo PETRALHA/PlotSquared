@@ -1,6 +1,6 @@
 name: Build PlotSquared (1.21)
 on:
-  workflow_dispatch:  # Permite execução manual
+  workflow_dispatch:
   push:
     branches: [ "main" ]
 
@@ -8,13 +8,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # Passo 1: Baixar o código-fonte
       - uses: actions/checkout@v4
         with:
-          submodules: recursive  # Importante para dependências
-          fetch-depth: 0         # Clona todo o histórico
+          submodules: recursive
+          fetch-depth: 0
 
-      # Passo 2: Configurar Java 17 (obrigatório para 1.21+)
+      - name: Debug Structure
+        run: |
+          echo "=== ESTRUTURA DO PROJETO ==="
+          ls -la
+          echo "=== BUILD.GRADLE ==="
+          find . -name build.gradle -exec ls -la {} \;
+          echo "=== SUBMÓDULOS ==="
+          git submodule status
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -22,22 +29,14 @@ jobs:
           distribution: temurin
           cache: gradle
 
-      # Passo 3: Compilar com Gradle
-      - name: Build with Gradle
+      - name: Build with Gradle (Debug Mode)
         run: |
-          chmod +x gradlew  # Dá permissão de execução
-          ./gradlew :PlotSquared-Bukkit:build -x test --no-daemon --stacktrace
+          chmod +x gradlew
+          ./gradlew clean build -x test --no-daemon --stacktrace --scan
 
-      # Passo 4: Verificar o arquivo .jar gerado
-      - name: Check JAR output
-        run: |
-          echo "=== Arquivo .jar gerado ==="
-          ls -la PlotSquared-Bukkit/build/libs/
-          test -f PlotSquared-Bukkit/build/libs/PlotSquared-Bukkit-*.jar || exit 1
-
-      # Passo 5: Disponibilizar para download
-      - uses: actions/upload-artifact@v4
+      - name: Upload Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
-          name: PlotSquared-1.21-JAR
-          path: PlotSquared-Bukkit/build/libs/PlotSquared-Bukkit-*.jar
-          if-no-files-found: error  # Falha se não gerar o .jar
+          name: PlotSquared-JAR
+          path: PlotSquared-Bukkit/build/libs/*.jar
